@@ -1,0 +1,981 @@
+function drawBigDiagram(sheet, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const rectWidth = 1200;
+  const rectHeight = 600;
+  
+  canvas.width = rectWidth;
+  canvas.height = rectHeight;
+  
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, rectWidth, rectHeight); 
+
+  const w = rectWidth;
+  const h = rectHeight;
+  
+  const padding = 60; 
+  const drawW = w - padding * 2;
+  const drawH = h - padding * 2;
+
+  const sw = sheet.sheet_width || 2440;
+  const sh = sheet.sheet_height || 1220;
+  
+  const scaleX = drawW / sw;
+  const scaleY = drawH / sh;
+
+  // 1. White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. Draw outer sheet border
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(padding, padding, drawW, drawH);
+
+  // 🔥 3. DRAW SHEET BACKGROUND GRAIN (Light vertical lines)
+  ctx.strokeStyle = 'rgba(0,0,0,0.03)'; 
+  ctx.lineWidth = 1.5;
+  for (let x = padding; x < padding + drawW; x += 12) {
+    ctx.beginPath();
+    ctx.moveTo(x, padding);
+    ctx.lineTo(x, padding + drawH);
+    ctx.stroke();
+  }
+
+  const colors = ['#FDEFF2', '#F0F8FF', '#F5F0FA', '#F0FBF0', '#FFF5EC', '#EEF6FB'];
+  
+  (sheet.parts || []).forEach((p, i) => {
+    const px = padding + (p.x * scaleX);
+    const py = padding + (p.y * scaleY);
+    const pw = p.w * scaleX;
+    const ph = p.h * scaleY;
+
+    // 1. Fill Color (Bringing the colors back)
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillRect(px, py, pw, ph);
+    
+    // 2. Draw Part Border
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(px, py, pw, ph);
+
+    // 3. Draw Grain Line (Fallback to saved parts if backend is stubborn)
+    let finalGrain = p.grain;
+    if (!finalGrain || finalGrain === 'none' || finalGrain === 'undefined') {
+      const originalPart = parts.find(x => x.label === p.label && x.material === p.material);
+      if (originalPart && originalPart.grain && originalPart.grain !== 'none') {
+        finalGrain = originalPart.grain;
+      }
+    }
+
+    if (finalGrain === 'length' || finalGrain === 'width') {
+      // Draw a textured, multi-line grain effect inside the part
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; 
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([15, 10]); // Long dashes look like wood grain
+      
+      if (finalGrain === 'length') {
+        // Vertical Grain (3 lines inside)
+        ctx.beginPath();
+        ctx.moveTo(px + pw * 0.3, py + 5); ctx.lineTo(px + pw * 0.3, py + ph - 5);
+        ctx.moveTo(px + pw * 0.5, py + 5); ctx.lineTo(px + pw * 0.5, py + ph - 5);
+        ctx.moveTo(px + pw * 0.7, py + 5); ctx.lineTo(px + pw * 0.7, py + ph - 5);
+      } else if (finalGrain === 'width') {
+        // Horizontal Grain (3 lines inside)
+        ctx.beginPath();
+        ctx.moveTo(px + 5, py + ph * 0.3); ctx.lineTo(px + pw - 5, py + ph * 0.3);
+        ctx.moveTo(px + 5, py + ph * 0.5); ctx.lineTo(px + pw - 5, py + ph * 0.5);
+        ctx.moveTo(px + 5, py + ph * 0.7); ctx.lineTo(px + pw - 5, py + ph * 0.7);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset
+    }
+
+    // 4. Veneer
+    if (p.has_veneer === true) {
+      ctx.strokeStyle = '#e94560'; 
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      const eb = p.edge_bands || { top: 'none', bottom: 'none', left: 'none', right: 'none' };
+      ctx.beginPath();
+      if (eb.top !== 'none') { ctx.moveTo(px + 4, py + 4); ctx.lineTo(px + pw - 4, py + 4); }
+      if (eb.bottom !== 'none') { ctx.moveTo(px + 4, py + ph - 4); ctx.lineTo(px + pw - 4, py + ph - 4); }
+      if (eb.left !== 'none') { ctx.moveTo(px + 4, py + 4); ctx.lineTo(px + 4, py + ph - 4); }
+      if (eb.right !== 'none') { ctx.moveTo(px + pw - 4, py + 4); ctx.lineTo(px + pw - 4, py + ph - 4); }
+      ctx.stroke();
+      ctx.setLineDash([]); 
+    }
+
+    // 5. Text
+    const wCm = Math.round(p.w / 10);
+    const hCm = Math.round(p.h / 10);
+    if (pw > 40 && ph > 25) {
+      ctx.fillStyle = '#000';
+      const fontSize = Math.min(16, Math.max(10, pw / 8));
+      ctx.font = `bold ${fontSize}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.label || (i + 1), px + pw/2, py + ph/2);
+    }
+    if (pw > 30) {
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(wCm, px + pw/2, py + 2);
+    }
+    if (ph > 30) {
+      ctx.save();
+      ctx.translate(px + 10, py + ph/2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(hCm, 0, 0);
+      ctx.restore();
+    }
+  });
+
+  // Rulers
+  ctx.fillStyle = '#000';
+  ctx.font = 'bold 16px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(Math.round(sw/10) + ' cm', w/2, padding - 15);
+  
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding - 5);
+  ctx.lineTo(padding + drawW, padding - 5);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(padding - 15, h/2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(Math.round(sh/10) + ' cm', 0, 0);
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.moveTo(padding - 5, padding);
+  ctx.lineTo(padding - 5, padding + drawH);
+  ctx.stroke();
+}
+
+
+
+
+
+function drawBigDiagram(sheet, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const rectWidth = 1200;
+  const rectHeight = 600;
+  canvas.width = rectWidth;
+  canvas.height = rectHeight;
+  
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, rectWidth, rectHeight); 
+
+  const w = rectWidth;
+  const h = rectHeight;
+  const padding = 60; 
+  const drawW = w - padding * 2;
+  const drawH = h - padding * 2;
+
+  const sw = sheet.sheet_width || 2440;
+  const sh = sheet.sheet_height || 1220;
+  const scaleX = drawW / sw;
+  const scaleY = drawH / sh;
+
+  // 1. White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. Draw outer sheet border
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(padding, padding, drawW, drawH);
+
+  // ============================================
+  // 🔥 SMART GRAIN LOGIC (BULLETPROOF)
+  // ============================================
+  
+  // A. Is it wood? (Safe check)
+  const matLower = (sheet.material || '').toLowerCase().trim();
+  const isMDF = matLower.includes('mdf') || matLower.includes('particle') || matLower.includes('melamine');
+  const isWood = !isMDF; // If it's not MDF, we assume it can have grain (Oak, Plywood, etc.)
+
+  // B. Determine Sheet Grain (Look at parts, fallback to global parts array)
+  let sheetGrain = sheet.sheet_grain || 'none';
+  
+  if (isWood) {
+    // 1. Try to find grain directly on the sheet's parts
+    let grainPart = (sheet.parts || []).find(p => p.grain === 'length' || p.grain === 'width');
+    
+    // 2. If backend failed to send grain, check the global "parts" array (your old fallback)
+    if (!grainPart && typeof parts !== 'undefined') {
+      for (const p of (sheet.parts || [])) {
+        const originalPart = parts.find(x => x.label === p.label && x.material === p.material);
+        if (originalPart && (originalPart.grain === 'length' || originalPart.grain === 'width')) {
+          grainPart = originalPart;
+          break;
+        }
+      }
+    }
+
+    if (grainPart && (grainPart.grain === 'length' || grainPart.grain === 'width')) {
+      sheetGrain = grainPart.grain;
+    }
+  }
+
+  // C. Draw Sheet Background Grain
+  if (isWood && sheetGrain !== 'none') {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(padding, padding, drawW, drawH);
+    ctx.clip();
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.04)'; 
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    const STEP = 20; 
+
+    if (sheetGrain === 'length') {
+      for (let x = padding; x <= padding + drawW; x += STEP) {
+        ctx.beginPath(); ctx.moveTo(x, padding); ctx.lineTo(x, padding + drawH); ctx.stroke();
+      }
+    } else {
+      for (let y = padding; y <= padding + drawH; y += STEP) {
+        ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(padding + drawW, y); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  const colors = ['#FDEFF2', '#F0F8FF', '#F5F0FA', '#F0FBF0', '#FFF5EC', '#EEF6FB'];
+  
+  // 3. Draw Parts
+  (sheet.parts || []).forEach((p, i) => {
+    const px = padding + (p.x * scaleX);
+    const py = padding + (p.y * scaleY);
+    const pw = p.w * scaleX;
+    const ph = p.h * scaleY;
+
+    // Fill Color
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillRect(px, py, pw, ph);
+    
+    // Part Border
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(px, py, pw, ph);
+
+    // D. Draw Part Grain (FORCED to match sheet if sheet has grain)
+    if (isWood) {
+      let drawDir = sheetGrain; // Default to sheet grain
+      
+      // If sheet has NO grain, fallback to the part's own grain
+      if (drawDir === 'none') {
+        drawDir = p.grain;
+        if (!drawDir || drawDir === 'none') {
+          if (typeof parts !== 'undefined') {
+            const originalPart = parts.find(x => x.label === p.label && x.material === p.material);
+            if (originalPart && originalPart.grain) drawDir = originalPart.grain;
+          }
+        }
+      }
+
+      if (drawDir === 'length' || drawDir === 'width') {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px, py, pw, ph);
+        ctx.clip();
+
+        // Professional Dashed Lines
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)'; 
+        ctx.lineWidth = 1; 
+        ctx.setLineDash([4, 4]); 
+        ctx.beginPath();
+        
+        if (drawDir === 'length') {
+          // Vertical
+          ctx.moveTo(px + pw * 0.3, py + 5); ctx.lineTo(px + pw * 0.3, py + ph - 5);
+          ctx.moveTo(px + pw * 0.5, py + 5); ctx.lineTo(px + pw * 0.5, py + ph - 5);
+          ctx.moveTo(px + pw * 0.7, py + 5); ctx.lineTo(px + pw * 0.7, py + ph - 5);
+        } else {
+          // Horizontal
+          ctx.moveTo(px + 5, py + ph * 0.3); ctx.lineTo(px + pw - 5, py + ph * 0.3);
+          ctx.moveTo(px + 5, py + ph * 0.5); ctx.lineTo(px + pw - 5, py + ph * 0.5);
+          ctx.moveTo(px + 5, py + ph * 0.7); ctx.lineTo(px + pw - 5, py + ph * 0.7);
+        }
+        ctx.stroke();
+        ctx.restore();
+        ctx.setLineDash([]); 
+      }
+    }
+
+    // 4. Veneer
+    if (p.has_veneer === true) {
+      ctx.strokeStyle = '#e94560'; 
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      const eb = p.edge_bands || { top: 'none', bottom: 'none', left: 'none', right: 'none' };
+      ctx.beginPath();
+      if (eb.top !== 'none') { ctx.moveTo(px + 4, py + 4); ctx.lineTo(px + pw - 4, py + 4); }
+      if (eb.bottom !== 'none') { ctx.moveTo(px + 4, py + ph - 4); ctx.lineTo(px + pw - 4, py + ph - 4); }
+      if (eb.left !== 'none') { ctx.moveTo(px + 4, py + 4); ctx.lineTo(px + 4, py + ph - 4); }
+      if (eb.right !== 'none') { ctx.moveTo(px + pw - 4, py + 4); ctx.lineTo(px + pw - 4, py + ph - 4); }
+      ctx.stroke();
+      ctx.setLineDash([]); 
+    }
+
+    // 5. Text
+    const wCm = Math.round(p.w / 10);
+    const hCm = Math.round(p.h / 10);
+    if (pw > 40 && ph > 25) {
+      ctx.fillStyle = '#000';
+      const fontSize = Math.min(16, Math.max(10, pw / 8));
+      ctx.font = `bold ${fontSize}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.label || (i + 1), px + pw/2, py + ph/2);
+    }
+    if (pw > 30) {
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(wCm, px + pw/2, py + 2);
+    }
+    if (ph > 30) {
+      ctx.save();
+      ctx.translate(px + 10, py + ph/2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(hCm, 0, 0);
+      ctx.restore();
+    }
+  });
+
+  // Rulers
+  ctx.fillStyle = '#000';
+  ctx.font = 'bold 16px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(Math.round(sw/10) + ' cm', w/2, padding - 15);
+  
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding - 5);
+  ctx.lineTo(padding + drawW, padding - 5);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(padding - 15, h/2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(Math.round(sh/10) + ' cm', 0, 0);
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.moveTo(padding - 5, padding);
+  ctx.lineTo(padding - 5, padding + drawH);
+  ctx.stroke();
+  
+  // Grain Direction Label
+  if (isWood && sheetGrain !== 'none') {
+    ctx.fillStyle = '#666';
+    ctx.font = '11px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`Grain: ${sheetGrain === 'length' ? '↕ Length' : '↔ Width'}`, padding + 4, padding - 6);
+  }
+}
+
+
+
+
+
+def pack_with_adaptive_sheets(parts, default_width, default_height, kerf):
+    from rectpack import newPacker, SORT_AREA
+    from rectpack.maxrects import MaxRectsBssf, MaxRectsBaf, MaxRectsBl
+    from rectpack.skyline import SkylineBl
+    from rectpack.guillotine import GuillotineBssfSas
+
+    if not parts:
+        return []
+
+    all_parts = []
+    part_lookup = {} 
+    pid = 0
+    
+    for part in parts:
+        for _ in range(int(part.get('qty', 1))):
+            p_data = {
+                'rid': pid,
+                'w': float(part['w']),
+                'h': float(part['h']),
+                'material': part.get('material', 'MDF'),
+                'label': part.get('label', 'Part'),
+                'has_veneer': bool(part.get('has_veneer', False)),
+                'veneer_edge_count': int(part.get('veneer_edge_count', 0)),
+                'veneer_length_mm': float(part.get('veneer_length_mm', 0)),
+                'edge_bands': part.get('edge_bands', None),
+                'grain': part.get('grain', 'none')
+            }
+            all_parts.append(p_data)
+            part_lookup[pid] = p_data
+            pid += 1
+
+    if not all_parts:
+        return []
+
+    from collections import defaultdict
+    by_material = defaultdict(list)
+    for p in all_parts:
+        by_material[p['material']].append(p)
+
+    all_sheets = []
+    sheet_number = 1
+
+    strategies = [
+        ('MaxRectsBssf', MaxRectsBssf),
+        ('MaxRectsBaf', MaxRectsBaf),
+        ('MaxRectsBl', MaxRectsBl),
+        ('SkylineBl', SkylineBl),
+        ('GuillotineBssfSas', GuillotineBssfSas),
+    ]
+
+    for material, material_parts in by_material.items():
+        best_sheets = None
+        best_score = -1
+        
+        # 🔥 DETERMINE SHEET GRAIN DIRECTION
+        # If any part has a grain, the sheet adopts that grain.
+        # If parts have mixed grains, we look at the first one.
+        sheet_grain = 'none'
+        for p in material_parts:
+            if p.get('grain') and p['grain'] != 'none':
+                sheet_grain = p['grain']
+                break
+
+        for strat_name, pack_algo in strategies:
+            try:
+                packer = newPacker(rotation=True, pack_algo=pack_algo, sort_algo=SORT_AREA)
+
+                for p in material_parts:
+                    part_grain = p.get('grain', 'none')
+                    
+                    # 🔥 PROFESSIONAL LOGIC
+                    if sheet_grain == 'none':
+                        # No grain anywhere, let rectpack rotate freely
+                        packer.add_rect(p['w'], p['h'], rid=p['rid'], rot=True)
+                    else:
+                        # The sheet has a grain. Parts MUST match it.
+                        if part_grain == sheet_grain:
+                            # Part matches sheet grain. Lock it.
+                            packer.add_rect(p['w'], p['h'], rid=p['rid'], rot=False)
+                        elif part_grain == 'none':
+                            # Part has no grain, but sheet does. 
+                            # We must rotate it to match the sheet.
+                            if sheet_grain == 'length':
+                                # Sheet is tall. Force part to be tall.
+                                if p['w'] > p['h']:
+                                    p['w'], p['h'] = p['h'], p['w']
+                            else:
+                                # Sheet is wide. Force part to be wide.
+                                if p['h'] > p['w']:
+                                    p['w'], p['h'] = p['h'], p['w']
+                            packer.add_rect(p['w'], p['h'], rid=p['rid'], rot=False)
+                        else:
+                            # Part has a DIFFERENT grain than the sheet. 
+                            # It shouldn't happen, but if it does, force it to fit.
+                            packer.add_rect(p['w'], p['h'], rid=p['rid'], rot=False)
+
+                for _ in range(len(material_parts)):
+                    packer.add_bin(default_width, default_height)
+
+                packer.pack()
+                used_bins = [b for b in packer if len(b) > 0]
+                if not used_bins:
+                    continue
+
+                total_used_area = sum(p['w'] * p['h'] for p in material_parts)
+                total_sheet_area = len(used_bins) * default_width * default_height
+                efficiency = (total_used_area / total_sheet_area) * 100 if total_sheet_area > 0 else 0
+                score = (10000.0 / len(used_bins)) + efficiency
+
+                if score > best_score:
+                    best_score = score
+                    sheets = []
+
+                    for sheet_idx, bin_obj in enumerate(used_bins):
+                        parts_on_sheet = []
+                        for rect in bin_obj:
+                            original_part = part_lookup.get(rect.rid)
+                            if not original_part:
+                                continue
+
+                            parts_on_sheet.append({
+                                'w': rect.width,
+                                'h': rect.height,
+                                'qty': 1,
+                                'material': original_part['material'],
+                                'label': original_part['label'],
+                                'x': rect.x,
+                                'y': rect.y,
+                                'rotated': (rect.width != original_part['w'] or rect.height != original_part['h']),
+                                'has_veneer': original_part['has_veneer'],
+                                'veneer_edge_count': original_part['veneer_edge_count'],
+                                'veneer_length_mm': original_part['veneer_length_mm'],
+                                'edge_bands': original_part.get('edge_bands', None),
+                                'grain': original_part.get('grain', 'none'),
+                                'sheet_grain': sheet_grain # 🔥 PASS SHEET GRAIN TO FRONTEND
+                            })
+
+                        used_area = sum(p['w'] * p['h'] for p in parts_on_sheet)
+                        sheet_area = default_width * default_height
+                        eff = min(100.0, (used_area / sheet_area) * 100) if sheet_area > 0 else 0
+
+                        sheets.append({
+                            'sheet_number': sheet_number + sheet_idx,
+                            'sheet_width': default_width,
+                            'sheet_height': default_height,
+                            'sheet_type': 'Standard',
+                            'material': material,
+                            'sheet_grain': sheet_grain, # 🔥 ADD TO SHEET
+                            'parts': parts_on_sheet,
+                            'used_area': used_area,
+                            'waste_area': max(0, sheet_area - used_area),
+                            'waste_rectangles': [],
+                            'waste_percentage': max(0, 100 - eff),
+                            'efficiency': eff
+                        })
+
+                    best_sheets = sheets
+            except Exception as e:
+                print(f"  ⚠️ Strategy '{strat_name}' failed: {e}")
+                continue
+
+        if best_sheets:
+            all_sheets.extend(best_sheets)
+            sheet_number += len(best_sheets)
+
+    return all_sheets
+
+
+
+
+    function drawBigDiagram(sheet, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const rectWidth = 1200;
+  const rectHeight = 600;
+  canvas.width = rectWidth;
+  canvas.height = rectHeight;
+  
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, rectWidth, rectHeight); 
+
+  const w = rectWidth;
+  const h = rectHeight;
+  const padding = 60; 
+  const drawW = w - padding * 2;
+  const drawH = h - padding * 2;
+
+  const sw = sheet.sheet_width || 2440;
+  const sh = sheet.sheet_height || 1220;
+  const scaleX = drawW / sw;
+  const scaleY = drawH / sh;
+
+  // 1. White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. Draw outer sheet border
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(padding, padding, drawW, drawH);
+
+  const matLower = (sheet.material || '').toLowerCase().trim();
+  const isMDF = matLower.includes('mdf') || matLower.includes('particle') || matLower.includes('melamine');
+  const isWood = !isMDF;
+
+  let sheetGrain = sheet.sheet_grain || 'none';
+  if (isWood && sheetGrain === 'none') {
+    const grainPart = (sheet.parts || []).find(p => p.grain === 'length' || p.grain === 'width');
+    if (grainPart) sheetGrain = grainPart.grain;
+  }
+
+  if (isWood && sheetGrain !== 'none') {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(padding, padding, drawW, drawH);
+    ctx.clip();
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.04)'; 
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    const STEP = 20; 
+
+    if (sheetGrain === 'length') {
+      for (let x = padding; x <= padding + drawW; x += STEP) {
+        ctx.beginPath(); ctx.moveTo(x, padding); ctx.lineTo(x, padding + drawH); ctx.stroke();
+      }
+    } else {
+      for (let y = padding; y <= padding + drawH; y += STEP) {
+        ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(padding + drawW, y); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  const colors = ['#FDEFF2', '#F0F8FF', '#F5F0FA', '#F0FBF0', '#FFF5EC', '#EEF6FB'];
+  
+  (sheet.parts || []).forEach((p, i) => {
+    const px = padding + (p.x * scaleX);
+    const py = padding + (p.y * scaleY);
+    const pw = p.w * scaleX;
+    const ph = p.h * scaleY;
+
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillRect(px, py, pw, ph);
+    
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(px, py, pw, ph);
+
+    // ---------------------------------------------------
+    // 🪵 DRAW GRAIN BASED ON THE PART (With Smart Rotation)
+    // ---------------------------------------------------
+    if (isWood) {
+      let drawDir = p.grain; 
+      
+      if (!drawDir || drawDir === 'none') {
+        if (typeof parts !== 'undefined') {
+          const originalPart = parts.find(x => x.label === p.label && x.material === p.material);
+          if (originalPart && originalPart.grain) {
+            drawDir = originalPart.grain;
+          }
+        }
+      }
+      
+      if (!drawDir || drawDir === 'none') {
+        drawDir = sheetGrain;
+      }
+
+      // 🔥 SMART ROTATION: If the packer rotated it, flip the visual direction
+      if (p.rotated) {
+        drawDir = drawDir === 'length' ? 'width' : 'length';
+      }
+
+      if (drawDir === 'length' || drawDir === 'width') {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px, py, pw, ph);
+        ctx.clip();
+
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)'; 
+        ctx.lineWidth = 1; 
+        ctx.setLineDash([4, 4]); 
+        ctx.beginPath();
+        
+        if (drawDir === 'length') {
+          ctx.moveTo(px + pw * 0.3, py + 5); ctx.lineTo(px + pw * 0.3, py + ph - 5);
+          ctx.moveTo(px + pw * 0.5, py + 5); ctx.lineTo(px + pw * 0.5, py + ph - 5);
+          ctx.moveTo(px + pw * 0.7, py + 5); ctx.lineTo(px + pw * 0.7, py + ph - 5);
+        } else {
+          ctx.moveTo(px + 5, py + ph * 0.3); ctx.lineTo(px + pw - 5, py + ph * 0.3);
+          ctx.moveTo(px + 5, py + ph * 0.5); ctx.lineTo(px + pw - 5, py + ph * 0.5);
+          ctx.moveTo(px + 5, py + ph * 0.7); ctx.lineTo(px + pw - 5, py + ph * 0.7);
+        }
+        ctx.stroke();
+        ctx.restore();
+        ctx.setLineDash([]); 
+      }
+    }
+
+    // 4. Veneer
+    if (p.has_veneer === true) {
+      ctx.strokeStyle = '#e94560'; 
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      const eb = p.edge_bands || { top: 'none', bottom: 'none', left: 'none', right: 'none' };
+      ctx.beginPath();
+      if (eb.top !== 'none') { ctx.moveTo(px + 4, py + 4); ctx.lineTo(px + pw - 4, py + 4); }
+      if (eb.bottom !== 'none') { ctx.moveTo(px + 4, py + ph - 4); ctx.lineTo(px + pw - 4, py + ph - 4); }
+      if (eb.left !== 'none') { ctx.moveTo(px + 4, py + 4); ctx.lineTo(px + 4, py + ph - 4); }
+      if (eb.right !== 'none') { ctx.moveTo(px + pw - 4, py + 4); ctx.lineTo(px + pw - 4, py + ph - 4); }
+      ctx.stroke();
+      ctx.setLineDash([]); 
+    }
+
+    // ---------------------------------------------------
+    // 📝 5. Text (With Smart Rotation)
+    // ---------------------------------------------------
+        // ---------------------------------------------------
+    // 📝 5. Text (Upright, but numbers swap if rotated)
+    // ---------------------------------------------------
+        // ---------------------------------------------------
+    // 📝 5. Text (Physically calculated swap)
+    // ---------------------------------------------------
+    const safeOrigW = p.orig_w || p.w || 0;
+    const safeOrigH = p.orig_h || p.h || 0;
+
+    // 🔥 THE REAL FIX: Compare the physical box (pw > ph) to the original dimensions
+    let displayW, displayH;
+    
+    if (pw > ph) {
+      // The box is drawn horizontally (wider than tall)
+      // The top number must be the larger number
+      displayW = Math.max(safeOrigW, safeOrigH);
+      displayH = Math.min(safeOrigW, safeOrigH);
+    } else {
+      // The box is drawn vertically (taller than wide)
+      // The top number must be the smaller number
+      displayW = Math.min(safeOrigW, safeOrigH);
+      displayH = Math.max(safeOrigW, safeOrigH);
+    }
+    
+    const wCm = Math.round(displayW / 10);
+    const hCm = Math.round(displayH / 10);
+
+    // Center Label
+    if (pw > 40 && ph > 25) {
+      ctx.fillStyle = '#000';
+      const fontSize = Math.min(16, Math.max(10, pw / 8));
+      ctx.font = `bold ${fontSize}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.label || (i + 1), px + pw/2, py + ph/2);
+    }
+    
+    // Top Text (Flat, shows the width of the physical box)
+    if (pw > 30) {
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      
+      // Draw flat, no rotation
+      ctx.fillText(wCm, px + pw/2, py + 2);
+    }
+    
+    // Left Text (Rotated 90 degrees, shows the height of the physical box)
+    if (ph > 30) {
+      ctx.save();
+      ctx.translate(px + 10, py + ph/2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      ctx.fillText(hCm, 0, 0);
+      ctx.restore();
+    }
+  });
+
+  // Rulers
+  ctx.fillStyle = '#000';
+  ctx.font = 'bold 16px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(Math.round(sw/10) + ' cm', w/2, padding - 15);
+  
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding - 5);
+  ctx.lineTo(padding + drawW, padding - 5);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(padding - 15, h/2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(Math.round(sh/10) + ' cm', 0, 0);
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.moveTo(padding - 5, padding);
+  ctx.lineTo(padding - 5, padding + drawH);
+  ctx.stroke();
+  
+  // Grain Direction Label
+  if (isWood && sheetGrain !== 'none') {
+    ctx.fillStyle = '#666';
+    ctx.font = '11px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`Grain: ${sheetGrain === 'length' ? '↕ Length' : '↔ Width'}`, padding + 4, padding - 6);
+  }
+}
+
+
+
+
+def pack_with_adaptive_sheets(parts, default_width, default_height, kerf):
+    from collections import defaultdict
+
+    if not parts:
+        return []
+
+    by_material = defaultdict(list)
+    for part in parts:
+        for _ in range(int(part.get('qty', 1))):
+            p_data = dict(part)
+            p_data['w'] = float(part['w'])
+            p_data['h'] = float(part['h'])
+            p_data['grain'] = part.get('grain', 'none')
+            by_material[part.get('material', 'MDF')].append(p_data)
+
+    all_sheets = []
+    sheet_number = 1
+
+    for material, material_parts in by_material.items():
+        
+        length_parts = [p for p in material_parts if p['grain'] == 'length']
+        width_parts = [p for p in material_parts if p['grain'] == 'width']
+        no_grain_parts = [p for p in material_parts if p['grain'] == 'none']
+        
+        groups = []
+        if length_parts or no_grain_parts:
+            groups.append(('length', length_parts + no_grain_parts))
+        if width_parts:
+            groups.append(('width', width_parts))
+
+        for group_grain, group_parts in groups:
+            if not group_parts:
+                continue
+                
+            group_parts.sort(key=lambda x: x['w'] * x['h'], reverse=True)
+            sheets = []
+            
+            for p in group_parts:
+                placed = False
+                p_w, p_h = p['w'], p['h']
+                is_rotated = False
+                
+                # 🔥 FORCE GRAIN ORIENTATION
+                if group_grain == 'length' and p_w > p_h:
+                    p_w, p_h = p_h, p_w
+                    is_rotated = True
+                elif group_grain == 'width' and p_h > p_w:
+                    p_w, p_h = p_h, p_w
+                    is_rotated = True
+                
+                for sheet in sheets:
+                    rects = sheet['free_rects']
+                    best_rect = None
+                    best_score = float('inf')
+                    
+                    for r in rects:
+                        if p_w <= r['w'] and p_h <= r['h']:
+                            score = r['w'] * r['h'] - p_w * p_h
+                            if score < best_score:
+                                best_score = score
+                                best_rect = r
+                                
+                    if best_rect:
+                        # 🔥 THIS IS THE BLOCK YOU NEEDED BACK
+                        sheet['parts'].append({
+                            'w': p_w, 
+                            'h': p_h,
+                            'orig_w': float(p['w']),  
+                            'orig_h': float(p['h']),  
+                            'qty': 1, 
+                            'material': material,
+                            'label': p.get('label', 'Part'),
+                            'x': best_rect['x'], 
+                            'y': best_rect['y'],
+                            'rotated': is_rotated,
+                            'has_veneer': p.get('has_veneer', False),
+                            'veneer_edge_count': p.get('veneer_edge_count', 0),
+                            'veneer_length_mm': p.get('veneer_length_mm', 0),
+                            'edge_bands': p.get('edge_bands', None),
+                            'grain': p.get('grain', 'none'), 
+                            'sheet_grain': group_grain
+                        })
+                        
+                        new_rects = []
+                        for r in rects:
+                            if r['x'] >= best_rect['x'] + p_w + kerf or r['x'] + r['w'] <= best_rect['x'] or \
+                               r['y'] >= best_rect['y'] + p_h + kerf or r['y'] + r['h'] <= best_rect['y']:
+                                new_rects.append(r)
+                            else:
+                                if best_rect['x'] > r['x']:
+                                    new_rects.append({'x': r['x'], 'y': r['y'], 'w': best_rect['x'] - r['x'], 'h': r['h']})
+                                if best_rect['x'] + p_w + kerf < r['x'] + r['w']:
+                                    new_rects.append({'x': best_rect['x'] + p_w + kerf, 'y': r['y'], 'w': r['x'] + r['w'] - (best_rect['x'] + p_w + kerf), 'h': r['h']})
+                                if best_rect['y'] > r['y']:
+                                    new_rects.append({'x': r['x'], 'y': r['y'], 'w': r['w'], 'h': best_rect['y'] - r['y']})
+                                if best_rect['y'] + p_h + kerf < r['y'] + r['h']:
+                                    new_rects.append({'x': r['x'], 'y': best_rect['y'] + p_h + kerf, 'w': r['w'], 'h': r['y'] + r['h'] - (best_rect['y'] + p_h + kerf)})
+                        sheet['free_rects'] = new_rects
+                        placed = True
+                        break
+                        
+                if not placed:
+                    new_sheet = {
+                        'sheet_number': sheet_number + len(sheets),
+                        'sheet_width': default_width,
+                        'sheet_height': default_height,
+                        'sheet_type': 'Standard',
+                        'material': material,
+                        'sheet_grain': group_grain,
+                        'parts': [],
+                        'free_rects': [{'x': 0, 'y': 0, 'w': default_width, 'h': default_height}]
+                    }
+                    # 🔥 AND THIS ONE FOR NEW SHEETS
+                    new_sheet['parts'].append({
+                        'w': p_w, 
+                        'h': p_h,
+                        'orig_w': float(p['w']), 
+                        'orig_h': float(p['h']), 
+                        'qty': 1, 
+                        'material': material,
+                        'label': p.get('label', 'Part'),
+                        'x': 0, 
+                        'y': 0,
+                        'rotated': is_rotated,
+                        'has_veneer': p.get('has_veneer', False),
+                        'veneer_edge_count': p.get('veneer_edge_count', 0),
+                        'veneer_length_mm': p.get('veneer_length_mm', 0),
+                        'edge_bands': p.get('edge_bands', None),
+                        'grain': p.get('grain', 'none'),
+                        'sheet_grain': group_grain
+                    })
+                    new_sheet['free_rects'] = []
+                    if p_w + kerf < default_width:
+                        new_sheet['free_rects'].append({'x': p_w + kerf, 'y': 0, 'w': default_width - (p_w + kerf), 'h': default_height})
+                    if p_h + kerf < default_height:
+                        new_sheet['free_rects'].append({'x': 0, 'y': p_h + kerf, 'w': default_width, 'h': default_height - (p_h + kerf)})
+                    
+                    sheets.append(new_sheet)
+
+            for s in sheets:
+                used_area = sum(part['w'] * part['h'] for part in s['parts'])
+                sheet_area = default_width * default_height
+                eff = min(100.0, (used_area / sheet_area) * 100) if sheet_area > 0 else 0
+                
+                s['used_area'] = used_area
+                s['waste_area'] = max(0, sheet_area - used_area)
+                s['waste_rectangles'] = []
+                s['waste_percentage'] = max(0, 100 - eff)
+                s['efficiency'] = eff
+                all_sheets.append(s)
+                
+            sheet_number += len(sheets)
+
+    return all_sheets

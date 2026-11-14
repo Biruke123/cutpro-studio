@@ -1,0 +1,32 @@
+﻿
+FullName                                                                          Length
+--------                                                                          ------
+C:\Users\Leykun\Desktop\cutpro-next\.env                                             174
+C:\Users\Leykun\Desktop\cutpro-next\backend.py                                     65506
+C:\Users\Leykun\Desktop\cutpro-next\CutPro_Scatter.rb                              21028
+C:\Users\Leykun\Desktop\cutpro-next\files.txt                                          0
+C:\Users\Leykun\Desktop\cutpro-next\installer.iss                                   3512
+C:\Users\Leykun\Desktop\cutpro-next\mongo_config.py                                 1387
+C:\Users\Leykun\Desktop\cutpro-next\my backup.py                                   60622
+C:\Users\Leykun\Desktop\cutpro-next\mybackup.html                                 238722
+C:\Users\Leykun\Desktop\cutpro-next\optimize-test.json                             41413
+C:\Users\Leykun\Desktop\cutpro-next\optimize-test2.json                                0
+C:\Users\Leykun\Desktop\cutpro-next\requirements.txt                                 104
+C:\Users\Leykun\Desktop\cutpro-next\test_grain.py                                   1082
+C:\Users\Leykun\Desktop\cutpro-next\test_pack.py                                    1841
+C:\Users\Leykun\Desktop\cutpro-next\backend_additions\material_colors.py            8013
+C:\Users\Leykun\Desktop\cutpro-next\backend_additions\__init__.py                      0
+C:\Users\Leykun\Desktop\cutpro-next\CutPro_Staging\CutPro.exe                   56655766
+C:\Users\Leykun\Desktop\cutpro-next\CutPro_Staging\CutPro.ico                      15086
+C:\Users\Leykun\Desktop\cutpro-next\CutPro_Staging\CutPro_Scatter.rb               21028
+C:\Users\Leykun\Desktop\cutpro-next\CutPro_Staging\CutPro_Uninstall.bat             2378
+C:\Users\Leykun\Desktop\cutpro-next\CutPro_Staging\install_sketchup_plugin.ps1      1430
+C:\Users\Leykun\Desktop\cutpro-next\CutPro_Staging\LICENSE.txt                      1132
+C:\Users\Leykun\Desktop\cutpro-next\CutPro_Staging\README.txt                        972
+C:\Users\Leykun\Desktop\cutpro-next\dist_installer\CutProSetup_v3.0.exe        113469457
+C:\Users\Leykun\Desktop\cutpro-next\dist_installer\CutProSetup_v4.0.exe         57599551
+C:\Users\Leykun\Desktop\cutpro-next\dist_installer\CutProSetup_v5.0.exe         57600178
+C:\Users\Leykun\Desktop\cutpro-next\frontend\hello.html                            36813
+C:\Users\Leykun\Desktop\cutpro-next\frontend\index.html                           246524
+
+

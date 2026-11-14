@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.exe
+dist_installer/
+CutPro_Staging/
+uploads/
+.env
+my backup.py
+mybackup.html
+*.json
+!requirements.txt
+!package.json
