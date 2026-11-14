@@ -2,11 +2,9 @@ flask
 flask-cors
 pymongo
 dnspython
-python-dotenv
 certifi
+python-dotenv
 bcrypt
 pyjwt
-ezdxf
 rectpack
 gunicorn
-werkzeug

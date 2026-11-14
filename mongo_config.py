@@ -1,27 +1,33 @@
 """
 MongoDB connection module for CutPro
-Loads MONGO_URI from .env and provides collections
+Loads MONGO_URI from environment (Render) or .env (local)
 """
 import os
-from dotenv import load_dotenv
-from pymongo import MongoClient, ASCENDING, DESCENDING
-import certifi
-
-# Load .env from the same folder as this file
 from pathlib import Path
-env_path = Path(__file__).parent / '.env'
-load_dotenv(dotenv_path=env_path)
-print(f"📄 Loading .env from: {env_path}")
-print(f"📄 File exists: {env_path.exists()}")
+
+# Load .env file if it exists (local dev only — harmless if missing)
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent / '.env'
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+except ImportError:
+    pass  # dotenv not installed — that's fine on Render
 
 MONGO_URI = os.getenv('MONGO_URI')
 if not MONGO_URI:
-    raise RuntimeError("❌ MONGO_URI not found in .env — did you create the file?")
+    raise RuntimeError("❌ MONGO_URI not set. Add it in Render Environment Variables.")
 
-print(f"🔌 Connecting to MongoDB...")
+print("🔌 Connecting to MongoDB...")
 
-# Connect with proper TLS (required for Atlas)
-client = MongoClient(MONGO_URI, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=10000)
+from pymongo import MongoClient, ASCENDING, DESCENDING
+import certifi
+
+client = MongoClient(
+    MONGO_URI,
+    tlsCAFile=certifi.where(),
+    serverSelectionTimeoutMS=10000
+)
 
 # Test connection
 try:
@@ -37,8 +43,8 @@ users_col = db['users']
 history_col = db['history']
 skp_col = db['sketchup_parts']
 
-# Indexes (safe to call repeatedly — Mongo ignores existing)
+# Indexes
 users_col.create_index([('username', ASCENDING)], unique=True)
 history_col.create_index([('username', ASCENDING), ('timestamp', DESCENDING)])
 
-print(f"✅ Collections ready: users, history, sketchup_parts")
+print("✅ Collections ready: users, history, sketchup_parts")
