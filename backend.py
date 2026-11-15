@@ -524,7 +524,7 @@ def api_status():
     installed = getattr(sys, 'frozen', False)
     return jsonify({
         'status': 'online',
-        'version': '3.0.0',
+        'version': '1.0.0',
         'installed': installed,     # True when running as CutPro.exe
         'mode': 'installed' if installed else 'web',
         'timestamp': datetime.now().isoformat(),
@@ -553,7 +553,7 @@ def api_status():
 def download_cutpro():
     """Redirects to the CutPro package hosted on GitHub Releases."""
     from flask import redirect
-    GITHUB_RELEASE_URL = 'https://github.com/Biruke123/cutpro-optimizer/releases/download/v5.0/CutProSetup_v5.0.exe'
+    GITHUB_RELEASE_URL = 'https://github.com/Biruke123/cutpro-studio/releases/download/v1.0/CutProStudio_v1.0.exe'
     print(f"ðŸ“¥ Download requested â†’ redirecting to GitHub Releases")
     return redirect(GITHUB_RELEASE_URL, code=302)
 
@@ -1793,7 +1793,7 @@ def get_latest_sketchup_parts():
 
 if __name__ == '__main__':
     print('=' * 60)
-    print('  CUTLIST OPTIMIZER PRO v3.0')
+    print('  CUTPRO STUDIO v1.0')
     print(' Server: http://localhost:5000')
     print(' Features:')
     print('   SKP Scattered File Support')
