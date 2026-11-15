@@ -2723,9 +2723,21 @@ body {
   <div class="modal-panel">
     <div class="modal-header"><h2 id="authTitle">Sign in</h2><button class="modal-close" onclick="closeModal('authModal')">&times;</button></div>
     <div class="modal-body">
-      <div class="field mb-4"><label>Username</label><input type="text" id="authUsername" placeholder="your-username" autocomplete="username"></div>
-      <div class="field mb-4" id="emailField" style="display: none;"><label>Email (optional)</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
-      <div class="field mb-4"><label>Password</label><input type="password" id="authPassword" placeholder="At least 6 characters" autocomplete="current-password"></div>
+      <div class="field mb-4">
+        <label>Username</label>
+        <input type="text" id="authUsername" placeholder="your-username" autocomplete="username" 
+               onkeydown="if(event.key==='Enter'){ event.preventDefault(); submitAuth(); }">
+      </div>
+      <div class="field mb-4" id="emailField" style="display: none;">
+        <label>Email (optional)</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" 
+               onkeydown="if(event.key==='Enter'){ event.preventDefault(); submitAuth(); }">
+      </div>
+      <div class="field mb-4">
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="At least 6 characters" autocomplete="current-password" 
+               onkeydown="if(event.key==='Enter'){ event.preventDefault(); submitAuth(); }">
+      </div>
       <div id="authMessage" style="font-size: 12.5px; color: var(--danger); min-height: 18px;"></div>
     </div>
     <div class="modal-footer">
