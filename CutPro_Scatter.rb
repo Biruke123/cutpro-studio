@@ -65,22 +65,12 @@ module CutPro
     # ============================================
     def self.default_materials
       [
-        { 'id' => 'oak',      'name' => 'Oak',      'shades' => [{ 'label' => 'Base', 'hex' => '#BE805B' }] },
-        { 'id' => 'walnut',   'name' => 'Walnut',   'shades' => [{ 'label' => 'Base', 'hex' => '#6B3F23' }] },
-        { 'id' => 'teak',     'name' => 'Teak',     'shades' => [{ 'label' => 'Base', 'hex' => '#A5762D' }] },
-        { 'id' => 'mahogany', 'name' => 'Mahogany', 'shades' => [{ 'label' => 'Base', 'hex' => '#7B2D1F' }] },
-        { 'id' => 'cherry',   'name' => 'Cherry',   'shades' => [{ 'label' => 'Base', 'hex' => '#9B4A2C' }] },
-        { 'id' => 'pine',     'name' => 'Pine',     'shades' => [{ 'label' => 'Base', 'hex' => '#E5C88C' }] },
-        { 'id' => 'birch',    'name' => 'Birch',    'shades' => [{ 'label' => 'Base', 'hex' => '#D9C6A3' }] },
-        { 'id' => 'mdf',      'name' => 'MDF',      'shades' => [{ 'label' => 'Base', 'hex' => '#C4A88E' }] },
-        { 'id' => 'melamine', 'name' => 'Melamine', 'shades' => [{ 'label' => 'Base', 'hex' => '#E8DCC4' }] },
-        { 'id' => 'uv_board', 'name' => 'UV Board', 'shades' => [{ 'label' => 'Base', 'hex' => '#F8F9FA' }] },
-        { 'id' => 'plywood',  'name' => 'Plywood',  'shades' => [{ 'label' => 'Base', 'hex' => '#C99A6E' }] },
-        { 'id' => 'bamboo',   'name' => 'Bamboo',   'shades' => [{ 'label' => 'Base', 'hex' => '#D4B57A' }] },
-        { 'id' => 'mdf_gray', 'name' => 'MDF Gray', 'shades' => [{ 'label' => 'Base', 'hex' => '#9E9E9E' }] }
+        { 'id' => 'oak',        'name' => 'Oak',        'shades' => [{ 'label' => 'Base', 'hex' => '#784625' }] },
+        { 'id' => 'normal-mdf', 'name' => 'Normal MDF', 'shades' => [{ 'label' => 'Base', 'hex' => '#FFFFFF' }] },
+        { 'id' => 'uv-board',   'name' => 'UV Board',   'shades' => [{ 'label' => 'Base', 'hex' => '#FFFACD' }] },
+        { 'id' => 'grey-mdf',   'name' => 'Grey MDF',   'shades' => [{ 'label' => 'Base', 'hex' => '#A9A9A9' }] }
       ]
     end
-
     # ============================================
     # 🔧 HEX → RGB
     # ============================================
